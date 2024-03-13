@@ -2,8 +2,10 @@
 
 /** Express app for jobly. */
 
+
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 
 const { NotFoundError } = require("./expressError");
 
@@ -20,13 +22,25 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(morgan("tiny"));
-app.use(authenticateJWT);
 
+
+// Serve static files from the React app build directory
+app.use(express.static(path.join(__dirname, '../frontend/build')));
+
+// app.use("/auth", authRoutes);
+// app.use("/companies", companiesRoutes);
+// app.use("/users", usersRoutes);
+// app.use("/jobs", jobsRoutes);
 app.use("/auth", authRoutes);
-app.use("/companies", companiesRoutes);
-app.use("/users", usersRoutes);
-app.use("/jobs", jobsRoutes);
+app.use("/companies", authenticateJWT, companiesRoutes);
+app.use("/users", authenticateJWT, usersRoutes);
+app.use("/jobs", authenticateJWT, jobsRoutes);
 
+
+// The catch-all handler for the React application
+app.get("*", function(req, res) {
+  res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+});
 
 /** Handle 404 errors -- this matches everything */
 app.use(function (req, res, next) {
